@@ -5,7 +5,7 @@
         <p class="mt-1 text-sm text-gray-600">Zaktualizuj zdjęcie profilowe</p>
     </header>
 
-    <img src="http://localhost:8000/{{ asset('images/test-image.png') }}" alt="zdjęcie profilowe"/>
+    <img src="{{ asset('images/' ~ app.user.image.path ?? '') }}" alt="zdjęcie profilowe"/>
 
     {{ form_start(imageForm, {'attr': {'class': 'p-4'}}) }}
     <label class="block mb-4">
