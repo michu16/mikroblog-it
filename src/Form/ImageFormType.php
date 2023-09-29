@@ -23,7 +23,7 @@ class ImageFormType extends AbstractType
                 'required' => true,
                 'constraints' => [
                     new File([
-                        'maxSize' => '2048',
+                        'maxSize' => '2097152',
                         'mimeTypes' => [
                             'image/gif',
                             'image/jpeg',

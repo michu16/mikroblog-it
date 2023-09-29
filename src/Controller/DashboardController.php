@@ -7,7 +7,9 @@ use App\Form\ChangePasswordFormType;
 use App\Form\DeleteAccountFormType;
 use App\Form\ImageFormType;
 use App\Form\UserFormType;
+use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
+use Symfony\Bundle\SecurityBundle\Security;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\Routing\Annotation\Route;
@@ -23,14 +25,30 @@ class DashboardController extends AbstractController
     }
 
     #[Route('/dashboard/profile', name: 'app_profile')]
-    public function profile(Request $request): Response
+    public function profile(Request $request, EntityManagerInterface $entityManager,
+    Security $security): Response
     {
         // change image
         $image = new Image();
         $imageForm = $this -> createForm(ImageFormType::class, $image);
         $imageForm->handleRequest($request);
+        $user = $this->getUser();
         if($imageForm->isSubmitted() && $imageForm->isValid()){
-            $image = $imageForm -> getData();
+//            $image = $imageForm -> getData();
+            $image->setPath($imageForm->get('imageFile')->getData()
+                ->getClientOriginalName());
+            if ($user->getImage()){
+                $oldImage = $entityManager->getRepository(Image::class)->find($user->getImages()->getId());
+                $entityManager -> remove($oldImage);
+            }
+            $user->setImage($image);
+            $entityManager->persist($image);
+            $entityManager->persist($user);
+            $entityManager->flush();
+            $this->addFlash(
+                'status-image',
+                'image-updated'
+            );
             return $this->redirectToRoute('app_profile');
         }
 
@@ -40,7 +58,13 @@ class DashboardController extends AbstractController
         $userForm->handleRequest($request);
 
         if ($userForm->isSubmitted() && $userForm->isValid()){
-            $user = $userForm->getData();
+//            $user = $userForm->getData();
+            $entityManager->persist($user);
+            $entityManager->flush();
+            $this->addFlash(
+                'status-profile-information',
+                'user-updated'
+            );
             return $this->redirectToRoute('app_profile');
         }
 
@@ -48,7 +72,13 @@ class DashboardController extends AbstractController
         $passwordForm = $this->createForm(ChangePasswordFormType::class, $user);
         $passwordForm->handleRequest($request);
         if ($passwordForm->isSubmitted() && $passwordForm->isValid()){
-            $user = $passwordForm->getData();
+//            $user = $passwordForm->getData();
+            $entityManager->persist($user);
+            $entityManager->flush();
+            $this->addFlash(
+                'status-password',
+                'password-changed'
+            );
             return $this->redirectToRoute('app_profile');
         }
 
@@ -56,8 +86,12 @@ class DashboardController extends AbstractController
         $deleteAccountForm = $this->createForm(DeleteAccountFormType::class, $user);
         $deleteAccountForm -> handleRequest($request);
         if ($deleteAccountForm->isSubmitted() && $deleteAccountForm->isValid()){
-            $user = $deleteAccountForm->getData();
-            return $this->redirectToRoute('app_profile');
+//            $user = $deleteAccountForm->getData();
+            $security -> logout(false);
+            $entityManager->remove($user);
+            $entityManager->flush();
+            $request->getSession()->invalidate();
+            return $this->redirectToRoute('posts.index');
         }
 
         return $this->render('dashboard/edit.html.twig', [

@@ -13,7 +13,7 @@
             <div class="mb-6">
                 {{ form_label(form.title, 'Tytuł wpisu', {'label_attr': {'class': 'block text-gray-700 font-bold mb-2'}}) }}
                 {% set title_error = form_errors(form.title) ? 'border-red-500' : '' %}
-                {{ form_widget(form.title, {'attr':{'class': (title_error)~'shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 mb-2 leading-tight focus:outline-none focus:shadow-outline', 'value':'','placeholder':'wpisz tytuł wpisu'}}) }}
+                {{ form_widget(form.title, {'attr':{'class': (title_error)~'shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 mb-2 leading-tight focus:outline-none focus:shadow-outline','placeholder':'wpisz tytuł wpisu'}}) }}
                 {% if form.title.vars['errors']|length > 0 %}
                     <p class="text-red-500 text-xs italic">
                         {% for error in form.title.vars['errors'] %}
