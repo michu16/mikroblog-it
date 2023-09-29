@@ -3,6 +3,7 @@
 namespace App\Controller;
 
 use App\Entity\Post;
+use App\Entity\User;
 use App\Form\PostType;
 use Doctrine\ORM\EntityManagerInterface;
 use Doctrine\Persistence\ManagerRegistry;
@@ -52,11 +53,13 @@ class PostController extends AbstractController
     }
 
     #[Route('/post/{id}', name: 'posts.show', methods: ['GET'])]
-    public function show(Post $post): Response
+    public function show(Post $post, EntityManagerInterface $entityManager): Response
     {
-
+        $isFollowing = $entityManager->getRepository(User::class)
+            ->isFollowing($this->getUser(), $post->getUser()) ?? false;
         return $this->render('post/show.html.twig', [
-            'post' => $post
+            'post' => $post,
+            'isFollowing' => $isFollowing
         ]);
     }
 
@@ -95,13 +98,23 @@ class PostController extends AbstractController
 
         return $this->render('post/index.html.twig', [
             'posts' => $posts,
+            'user' => $posts[0]?->getUser()->getName()
         ]);
     }
 
     #[Route('/toggleFollow/{user}', name: 'toggleFollow', methods: ['GET'])]
-    public function toggleFollow($user): Response
+    public function toggleFollow(EntityManagerInterface $entityManager, User $user, Request $request): Response
     {
         $this->denyAccessUnlessGranted('IS_AUTHENTICATED_FULLY');
-        return new Response('logika dla przełączania funkcjonalności like/dislike');
+        $isFollowing = $entityManager->getRepository(User::class)
+            ->isFollowing($this->getUser(), $user) ?? false;
+        if ($isFollowing){
+            $this->getUser()->removeFollowing($user);
+        } else{
+            $this->getUser()->addFollowing($user);
+        }
+        $entityManager->flush();
+        $route = $request->headers->get('referer');
+        return $this->redirect($route);
     }
 }
