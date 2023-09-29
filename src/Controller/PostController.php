@@ -4,6 +4,8 @@ namespace App\Controller;
 
 use App\Entity\Post;
 use App\Form\PostType;
+use Doctrine\ORM\EntityManagerInterface;
+use Doctrine\Persistence\ManagerRegistry;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\Routing\Annotation\Route;
@@ -14,23 +16,33 @@ class PostController extends AbstractController
 {
 
     #[Route('/', name: 'posts.index', methods: ['GET'])]
-    public function index(): Response
+    public function index(Request $request, ManagerRegistry $doctrine): Response
     {
-        return $this->render('post/index.html.twig');
+        $posts = $doctrine->getRepository(Post::class)->findAllPosts(
+            $request->query->getInt('page', 1)
+        );
+
+        return $this->render('post/index.html.twig', [
+            'posts' => $posts,
+        ]);
     }
 
     #[Route('/post/new', name: 'posts.new', methods: ['GET', 'POST'])]
-    public function new(Request $request): Response
+    public function new(Request $request, EntityManagerInterface $entityManager): Response
     {
         $this->denyAccessUnlessGranted('IS_AUTHENTICATED_FULLY');
         $post = new Post();
-//        $post->setTitle('Tytuł wpisu');
-//        $post->setContent('Zawartość wpisu');
+        $post->setTitle('Tytuł wpisu');
+        $post->setContent('Zawartość wpisu');
+        $post->setUser($this->getUser());
+        $post->setCreatedAt(new \DateTimeImmutable('now'));
         $form = $this->createForm(PostType::class, $post);
         $form->handleRequest(($request));
 
         if ($form->isSubmitted() && $form->isValid()) {
-            $post = $form->getData();
+//            $post = $form->getData();
+            $entityManager->persist($post);
+            $entityManager->flush();
 
             return $this->redirectToRoute('posts.index');
         }
@@ -40,21 +52,25 @@ class PostController extends AbstractController
     }
 
     #[Route('/post/{id}', name: 'posts.show', methods: ['GET'])]
-    public function show($id): Response
+    public function show(Post $post): Response
     {
-        return $this->render('post/show.html.twig');
+
+        return $this->render('post/show.html.twig', [
+            'post' => $post
+        ]);
     }
 
     #[Route('/post/{id}/edit', name: 'posts.edit', methods: ['GET', 'POST'])]
-    public function edit(Request $request): Response
+    public function edit(Post $post, Request $request, ManagerRegistry $doctrine): Response
     {
         $this->denyAccessUnlessGranted('IS_AUTHENTICATED_FULLY');
-        $post = new Post();
         $form = $this->createForm(PostType::class, $post);
         $form->handleRequest($request);
         if ($form->isSubmitted() && $form->isValid()) {
             $post = $form->getData();
-
+            $entityManager = $doctrine->getManager();
+            $entityManager->persist($post);
+            $entityManager->flush();
             return $this->redirectToRoute('posts.index');
         }
 //        return $this->redirectToRoute('posts.index');
@@ -62,16 +78,24 @@ class PostController extends AbstractController
     }
 
     #[Route('/post/{id}/delete', name: 'posts.delete', methods: ['POST'])]
-    public function delete($id): Response
+    public function delete(Post $post, ManagerRegistry $doctrine): Response
     {
         $this->denyAccessUnlessGranted('IS_AUTHENTICATED_FULLY');
-        return new Response('Usuwanie posta z bazy danych');
+        $entityManager = $doctrine->getManager();
+        $entityManager->remove($post);
+        $entityManager->flush();
+        return $this->redirectToRoute('posts.index');
     }
 
     #[Route('/posts/user/{id}', name: 'posts.user', methods: ['GET'])]
-    public function user($id): Response
+    public function user(Request $request, ManagerRegistry $doctrine, $id): Response
     {
-        return $this->render('post/index.html.twig');
+        $posts = $doctrine->getRepository(Post::class)
+            ->findAllUserPosts($request->query->getInt('page', 1), $id);
+
+        return $this->render('post/index.html.twig', [
+            'posts' => $posts,
+        ]);
     }
 
     #[Route('/toggleFollow/{user}', name: 'toggleFollow', methods: ['GET'])]
