@@ -12,14 +12,36 @@
 
     {% block javasccripts %}
         {{ encore_entry_script_tags('app') }}
+        <script src="https://js.pusher.com/8.2.0/pusher.min.js"></script>
+        <script>
+            // Enable pusher logging - don't include this in production
+            Pusher.logToConsole = true;
+
+            var pusher = new Pusher('661b253521ed3ef77b5e', {
+                cluster: 'eu'
+            });
+
+            var channel = pusher.subscribe('my-channel');
+            channel.bind('new-post-event', function (data) {
+                var event= new CustomEvent('message-received', {
+                    detail: {
+                        msg: data
+                    }
+                })
+                window.dispatchEvent(event)
+            });
+        </script>
     {% endblock %}
 </head>
 
 <body class="font-sans antialiased">
 
 {# notification #}
-<div x-data="{ show: true, message: 'Opublikowano nowy wpis' }" x-show="show"
-     x-init="setTimeout(() => show = false, 5000)" x-trainsition @close.window="show=false" class="flex justify-between m-auto w-3/4 text-blue-200 shadow-inner p-3 bg-blue-600">
+<div x-data="{ show: false, message: '' }" x-show="show"
+     @message-received.window="show=true; message=$event.detail.msg; setTimeout(() => show = false, 5000);"
+     x-transition
+     @close.window="show=false"
+     class="flex justify-between m-auto w-3/4 text-blue-200 shadow-inner p-3 bg-blue-600">
     <p>
         <strong @click="$dispatch('close')">
             Info
@@ -43,7 +65,7 @@
                 <a href="{{ path('posts.index') }}">Mikroblog</a>
             </div>
 
-       {{ component('SearchComponent') }}
+            {{ component('SearchComponent') }}
 
         </div>
 
@@ -60,8 +82,8 @@
                class="inline font-bold text-sm px-6 py-2 text-white rounded-full bg-red-500 hover:bg-red-600"> Nowy
                 wpis</a>
             {% else %}
-            <a href="{{ path('app_login') }}" class="tracking-widest hover:text-stone-500">Logowanie</a>
-            <a href="{{ path('app_register') }}" class="tracking-widest hover:text-stone-500">Rejestracja</a>
+                <a href="{{ path('app_login') }}" class="tracking-widest hover:text-stone-500">Logowanie</a>
+                <a href="{{ path('app_register') }}" class="tracking-widest hover:text-stone-500">Rejestracja</a>
             {% endif %}
         </div>
 
@@ -80,17 +102,17 @@
         <div id="mobile-menu"
              class="flex-col items-center hidden py-8 mt-10 space-y-6 bg-white left-6 right-6 drop-shadow-lg">
             {% if is_granted('IS_AUTHENTICATED_FULLY') %}
-            <p> Zalogowany jako:
-                <a class="hover:text-stone-500" href="{{ path('app_dashboard') }}">{{ app.user.email }}</a>
-            </p>
-            {{ include('_logout_form.html.twig') }}
-            <a href="{{ path('posts.new') }}"
-               class="inline font-bold text-sm px-6 py-2 text-white rounded-full bg-red-500 hover:bg-red-600">
-                Nowy wpis
-            </a>
+                <p> Zalogowany jako:
+                    <a class="hover:text-stone-500" href="{{ path('app_dashboard') }}">{{ app.user.email }}</a>
+                </p>
+                {{ include('_logout_form.html.twig') }}
+                <a href="{{ path('posts.new') }}"
+                   class="inline font-bold text-sm px-6 py-2 text-white rounded-full bg-red-500 hover:bg-red-600">
+                    Nowy wpis
+                </a>
             {% else %}
-            <a class="tracking-widest hover:text-stone-500" href="{{ path('app_login') }}">Zaloguj</a>
-            <a class="tracking-widest hover:text-stone-500" href="{{ path('app_register') }}">Zarejestruj</a>
+                <a class="tracking-widest hover:text-stone-500" href="{{ path('app_login') }}">Zaloguj</a>
+                <a class="tracking-widest hover:text-stone-500" href="{{ path('app_register') }}">Zarejestruj</a>
             {% endif %}
         </div>
     </div>

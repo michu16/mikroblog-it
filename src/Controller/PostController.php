@@ -7,6 +7,7 @@ use App\Entity\User;
 use App\Form\PostType;
 use Doctrine\ORM\EntityManagerInterface;
 use Doctrine\Persistence\ManagerRegistry;
+use Pusher\Pusher;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\Routing\Annotation\Route;
@@ -29,12 +30,12 @@ class PostController extends AbstractController
     }
 
     #[Route('/post/new', name: 'posts.new', methods: ['GET', 'POST'])]
-    public function new(Request $request, EntityManagerInterface $entityManager): Response
+    public function new(Request $request, EntityManagerInterface $entityManager, Pusher $pusher): Response
     {
         $this->denyAccessUnlessGranted('IS_AUTHENTICATED_FULLY');
         $post = new Post();
-        $post->setTitle('Tytuł wpisu');
-        $post->setContent('Zawartość wpisu');
+//        $post->setTitle('Tytuł wpisu');
+//        $post->setContent('Zawartość wpisu');
         $post->setUser($this->getUser());
         $post->setCreatedAt(new \DateTimeImmutable('now'));
         $form = $this->createForm(PostType::class, $post);
@@ -44,6 +45,9 @@ class PostController extends AbstractController
 //            $post = $form->getData();
             $entityManager->persist($post);
             $entityManager->flush();
+            $pusher->trigger('my-channel', 'new-post-event',
+                'Nowy wpis: <a href="' . $this->generateUrl('posts.show',
+                    ["id" => $post->getId()]) . '">' . $post->getTitle() . '</a>');
 
             return $this->redirectToRoute('posts.index');
         }
