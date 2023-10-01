@@ -55,10 +55,11 @@
                         <div x-show="tab === 3">
                             <b>Wpisy które polubiłeś:</b>
                             <ul>
+                                {% for lpost in app.user.getLikedPosts() %}
                                 <li>
-                                    <a class="hover:text-stone-500" href="{{ path('posts.show', {id:1}) }}">Polubione
-                                        wpisy</a>
+                                    <a class="hover:text-stone-500" href="{{ path('posts.show', {id: lpost.id}) }}">{{ lpost.title }}</a>
                                 </li>
+                                {% endfor %}
                             </ul>
                         </div>
                     </div>

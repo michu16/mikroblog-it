@@ -57,16 +57,26 @@ class PostController extends AbstractController
     {
         $isFollowing = $entityManager->getRepository(User::class)
             ->isFollowing($this->getUser(), $post->getUser()) ?? false;
+
+        $isLiked = $entityManager->getRepository(Post::class)->isLiked(
+            $this->getUser(), $post->getId()) ?? false;
+
+        $isDisliked = $entityManager->getRepository(Post::class)->isDisliked(
+            $this->getUser(), $post->getId()) ?? false;
         return $this->render('post/show.html.twig', [
             'post' => $post,
-            'isFollowing' => $isFollowing
+            'isFollowing' => $isFollowing,
+            'isLiked' => $isLiked,
+            'isDisliked' => $isDisliked,
         ]);
     }
 
     #[Route('/post/{id}/edit', name: 'posts.edit', methods: ['GET', 'POST'])]
     public function edit(Post $post, Request $request, ManagerRegistry $doctrine): Response
     {
-        $this->denyAccessUnlessGranted('IS_AUTHENTICATED_FULLY');
+//        $this->denyAccessUnlessGranted('IS_AUTHENTICATED_FULLY');
+        $this->denyAccessUnlessGranted('POST_EDIT', $post);
+        $post->setUpdatedAt(new \DateTimeImmutable('now'));
         $form = $this->createForm(PostType::class, $post);
         $form->handleRequest($request);
         if ($form->isSubmitted() && $form->isValid()) {
@@ -83,7 +93,8 @@ class PostController extends AbstractController
     #[Route('/post/{id}/delete', name: 'posts.delete', methods: ['POST'])]
     public function delete(Post $post, ManagerRegistry $doctrine): Response
     {
-        $this->denyAccessUnlessGranted('IS_AUTHENTICATED_FULLY');
+//        $this->denyAccessUnlessGranted('IS_AUTHENTICATED_FULLY');
+        $this->denyAccessUnlessGranted('POST_DELETE', $post);
         $entityManager = $doctrine->getManager();
         $entityManager->remove($post);
         $entityManager->flush();
@@ -108,9 +119,9 @@ class PostController extends AbstractController
         $this->denyAccessUnlessGranted('IS_AUTHENTICATED_FULLY');
         $isFollowing = $entityManager->getRepository(User::class)
             ->isFollowing($this->getUser(), $user) ?? false;
-        if ($isFollowing){
+        if ($isFollowing) {
             $this->getUser()->removeFollowing($user);
-        } else{
+        } else {
             $this->getUser()->addFollowing($user);
         }
         $entityManager->flush();
