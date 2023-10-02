@@ -4,7 +4,7 @@
     <meta charset="UTF-8"/>
     <meta name="viewport" content="width=device-width, initial-scale=1"/>
     <title>
-        {% block title %}Welcome!{% endblock %}
+        {% block title %}Mikroblog IT{% endblock %}
     </title>
     {% block stylesheets %}
         {{ encore_entry_link_tags('app') }}
@@ -62,7 +62,7 @@
         <div class="flex items-center">
             {{ include('svg_icons/symfony_logo.html.twig') }}
             <div class="text-3xl hidden md:block tracking-tight text-gray-600 font-medium ml-2">
-                <a href="{{ path('posts.index') }}">Mikroblog</a>
+                <a href="{{ path('posts.index') }}">Mikroblog IT</a>
             </div>
 
             {{ component('SearchComponent') }}
